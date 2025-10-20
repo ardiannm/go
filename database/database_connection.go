@@ -18,7 +18,7 @@ func init() {
 	// Load .env file
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Println("Warning: .env file not found, ensure environment variables are set.")
+		log.Println("Warning: .env file not found, ensure environment variables are set")
 	}
 	// Get MongoDB URI
 	uri := os.Getenv("MONGODB_URI")

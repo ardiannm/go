@@ -54,7 +54,7 @@ func GetMovie() gin.HandlerFunc {
 
 func AddMovie() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		var movie models.Movie
 		if err := ctx.ShouldBindJSON(&movie); err != nil {
@@ -65,5 +65,11 @@ func AddMovie() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": err.Error()})
 			return
 		}
+		result, err := movieCollection.InsertOne(c, movie)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie."})
+			return
+		}
+		ctx.JSON(http.StatusCreated, result)
 	}
 }

@@ -67,9 +67,39 @@ func AddMovie() gin.HandlerFunc {
 		}
 		result, err := movieCollection.InsertOne(c, movie)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie."})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie.", "details": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusCreated, result)
+	}
+}
+
+func DeleteMovieByIMDBID() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		movieID := ctx.Param("imdb_id")
+		if movieID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Movie ID required"})
+			return
+		}
+		result, err := movieCollection.DeleteOne(ctx, bson.M{"imdb_id": movieID})
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if result.DeletedCount == 0 {
+			ctx.JSON(http.StatusOK, gin.H{
+				"deleted":       false,
+				"deleted_count": result.DeletedCount,
+				"message":       "No movie found with the provided IMDb ID.",
+			})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{
+			"deleted":       true,
+			"deleted_count": result.DeletedCount,
+			"message":       "Movie successfully deleted.",
+		})
 	}
 }

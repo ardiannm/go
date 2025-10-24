@@ -1,4 +1,4 @@
-module github.com/gotrock/go
+module github.com/ardiannm/go
 
 go 1.24.0
 

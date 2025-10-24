@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/gotrock/go/database"
-	"github.com/gotrock/go/models"
+	"github.com/ardiannm/go/database"
+	"github.com/ardiannm/go/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"golang.org/x/crypto/bcrypt"

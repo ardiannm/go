@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gotrock/go/controllers"
+	"github.com/ardiannm/go/controllers"
 )
 
 func main() {

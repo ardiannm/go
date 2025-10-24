@@ -1,5 +1,6 @@
+
 ###
-DELETE http://localhost:8080/movies/tt0102034
+GET http://localhost:8080/movies/tt0102034
 
 ###
 GET http://localhost:8080/movies
@@ -29,3 +30,6 @@ Content-Type: application/json
         "ranking_name": "bad"
     }
 }
+
+###
+DELETE http://localhost:8080/movies/tt0102034

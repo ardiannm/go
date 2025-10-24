@@ -104,20 +104,25 @@ func LoginUser() gin.HandlerFunc {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 			return
 		}
-
 		token, refreshToken, err := utils.GenerateAllTokens(foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.Role, foundUser.UserID)
-
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens", "details": err.Error()})
 			return
 		}
-
-		result := utils.UpdateAllTokens(foundUser.UserID, token, refreshToken)
-
-		if result != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens"})
+		err = utils.UpdateAllTokens(foundUser.UserID, token, refreshToken)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens", "details": err.Error()})
 			return
 		}
-		
+		ctx.JSON(http.StatusOK, models.UserResponse{
+			UserID:          foundUser.UserID,
+			FirstName:       foundUser.FirstName,
+			LastName:        foundUser.LastName,
+			Email:           foundUser.Email,
+			Role:            foundUser.Role,
+			Token:           token,
+			RefreshToken:    refreshToken,
+			FavouriteGenres: foundUser.FavouriteGenres,
+		})
 	}
 }

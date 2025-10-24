@@ -30,35 +30,35 @@ func GenerateAllTokens(email, firstName, lastName, role, userId string) (string,
 		LastName:  lastName,
 		Role:      role,
 		UserID:    userId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "Gotrock",
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
 	}
-
-	claims.RegisteredClaims = jwt.RegisteredClaims{
-		Issuer:    "Gotrock",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-	}
-
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	signedAccessToken, err := accessToken.SignedString([]byte(SECRET_ACCESS_KEY))
-
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(SECRET_ACCESS_KEY))
 	if err != nil {
 		return "", "", err
 	}
-
-	claims.RegisteredClaims = jwt.RegisteredClaims{
-		Issuer:    "Gotrock",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+	refreshClaims := &SignedDetails{
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		Role:      role,
+		UserID:    userId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "Gotrock",
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * 7 * time.Hour)),
+		},
 	}
-
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefreshToken, err := refreshToken.SignedString([]byte(SECRET_REFRESH_KEY))
-
 	if err != nil {
 		return "", "", err
 	}
-
-	return signedAccessToken, signedRefreshToken, nil
+	return signedToken, signedRefreshToken, nil
 }
 
 var userCollection *mongo.Collection = database.OpenCollection("users")

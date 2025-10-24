@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/ardiannm/go/controllers"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -22,6 +22,7 @@ func main() {
 
 	router.POST("/users", controllers.RegisterUser())
 	router.GET("/users", controllers.GetUsers())
+	router.POST("/users/login", controllers.LoginUser())
 
 	if err := router.Run(":8080"); err != nil {
 		fmt.Println("Failed to start server", err)

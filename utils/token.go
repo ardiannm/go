@@ -125,3 +125,15 @@ func GetUserIDFromContext(ctx *gin.Context) (string, error) {
 	}
 	return id, nil
 }
+
+func GetUserRoleFromContext(ctx *gin.Context) (string, error) {
+	role, exists := ctx.Get("role")
+	if !exists {
+		return "", errors.New("User role does not exist in this context")
+	}
+	userRole, ok := role.(string)
+	if !ok {
+		return "", errors.New("Unable to retrieve user role")
+	}
+	return userRole, nil
+}

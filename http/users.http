@@ -3,7 +3,7 @@ POST http://localhost:8080/users/login
 Content-Type: application/json
 
 {
-  "email": "ardianmaliqaj49@gmail.com",
+  "email": "am.ardian.maliqaj@gmail.com",
   "password": "gotrock73"
 }
 
@@ -20,6 +20,34 @@ Content-Type: application/json
   "email": "ardianmaliqaj49@gmail.com",
   "password": "gotrock73",
   "role": "USER",
+  "token": "",
+  "refresh_token": "",
+  "favourite_genres": [
+    {
+      "genre_id": 1,
+      "genre_name": "Comedy"
+    },
+    {
+      "genre_id": 5,
+      "genre_name": "Thriller"
+    },
+    {
+      "genre_id": 6,
+      "genre_name": "Sci-Fi"
+    }
+  ]
+}
+
+###
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "first_name": "Ardian",
+  "last_name": "Maliqaj",
+  "email": "am.ardian.maliqaj@gmail.com",
+  "password": "gotrock73",
+  "role": "ADMIN",
   "token": "",
   "refresh_token": "",
   "favourite_genres": [

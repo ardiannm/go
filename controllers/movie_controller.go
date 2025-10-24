@@ -39,7 +39,7 @@ func GetMovies() gin.HandlerFunc {
 		}
 		defer cursor.Close(mongoCtx)
 		if err = cursor.All(mongoCtx, &movies); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode movies", "details": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode movies", "reasons": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, movies)
@@ -75,12 +75,12 @@ func AddMovie() gin.HandlerFunc {
 			return
 		}
 		if err := validate.Struct(movie); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "reasons": err.Error()})
 			return
 		}
 		result, err := movieCollection.InsertOne(mongoCtx, movie)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie.", "details": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie.", "reasons": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusCreated, result)
@@ -119,6 +119,15 @@ func DeleteMovieByIMDBID() gin.HandlerFunc {
 
 func AdminReviewUpdate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		role, err := utils.GetUserRoleFromContext(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "User role not found in this context"})
+			return
+		}
+		if role != "ADMIN" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Not an admin"})
+			return
+		}
 		IMDb_ID := ctx.Param("imdb_id")
 		if IMDb_ID == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Movie IMDb id is required"})
@@ -137,7 +146,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 		}
 		sentinment, rankingValue, err := GetReviewRanking(req.AdminReview)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't get review ranking"})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't get review ranking", "reasons": err.Error()})
 			return
 		}
 		filter := bson.M{"imdb_id": IMDb_ID}

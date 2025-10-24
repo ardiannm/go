@@ -18,16 +18,18 @@ var validate = validator.New()
 
 func GetMovies() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		moviesCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		var movies []models.Movie
-		cursor, err := movieCollection.Find(moviesCtx, bson.M{})
+		cursor, err := movieCollection.Find(mongoCtx, bson.M{})
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch movies"})
+			return
 		}
-		defer cursor.Close(moviesCtx)
-		if err = cursor.All(moviesCtx, &movies); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode movies"})
+		defer cursor.Close(mongoCtx)
+		if err = cursor.All(mongoCtx, &movies); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode movies", "details": err.Error()})
+			return
 		}
 		ctx.JSON(http.StatusOK, movies)
 	}
@@ -54,7 +56,7 @@ func GetMovie() gin.HandlerFunc {
 
 func AddMovie() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		var movie models.Movie
 		if err := ctx.ShouldBindJSON(&movie); err != nil {
@@ -65,7 +67,7 @@ func AddMovie() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": err.Error()})
 			return
 		}
-		result, err := movieCollection.InsertOne(c, movie)
+		result, err := movieCollection.InsertOne(mongoCtx, movie)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add movie.", "details": err.Error()})
 			return

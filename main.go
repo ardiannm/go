@@ -20,6 +20,9 @@ func main() {
 	router.POST("/movies", controllers.AddMovie())
 	router.DELETE("/movies/:imdb_id", controllers.DeleteMovieByIMDBID())
 
+	router.POST("/users", controllers.RegisterUser())
+	router.GET("/users", controllers.GetUsers())
+
 	if err := router.Run(":8080"); err != nil {
 		fmt.Println("Failed to start server", err)
 	}

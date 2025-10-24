@@ -2,10 +2,12 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"os"
 	"time"
 
 	"github.com/ardiannm/go/database"
+	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -20,7 +22,7 @@ type SignedDetails struct {
 	jwt.RegisteredClaims
 }
 
-var SECRET_ACCESS_KEY = os.Getenv("SECRET_ACCESS_KEY")
+var SECRET_KEY = os.Getenv("SECRET_ACCESS_KEY")
 var SECRET_REFRESH_KEY = os.Getenv("SECRET_REFRESH_KEY")
 
 func GenerateAllTokens(email, firstName, lastName, role, userId string) (string, string, error) {
@@ -37,7 +39,7 @@ func GenerateAllTokens(email, firstName, lastName, role, userId string) (string,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(SECRET_ACCESS_KEY))
+	signedToken, err := token.SignedString([]byte(SECRET_KEY))
 	if err != nil {
 		return "", "", err
 	}
@@ -81,4 +83,33 @@ func UpdateAllTokens(userId, token, refreshToken string) (err error) {
 		return err
 	}
 	return nil
+}
+
+func GetAccessToken(ctx *gin.Context) (string, error) {
+	authHeader := ctx.Request.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("Authorization header is required")
+	}
+	token := authHeader[len("Bearer "):]
+	if token == "" {
+		return "", errors.New("Bearer token is required")
+	}
+	return token, nil
+}
+
+func ValidateToken(tokenString string) (*SignedDetails, error) {
+	claims := &SignedDetails{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		return []byte(SECRET_KEY), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, err
+	}
+	if claims.ExpiresAt.Time.Before(time.Now()) {
+		return nil, errors.New("Token has expired")
+	}
+	return claims, nil
 }

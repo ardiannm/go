@@ -7,6 +7,7 @@ import (
 
 	"github.com/ardiannm/go/config"
 	"github.com/ardiannm/go/database"
+	"github.com/ardiannm/go/models"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -17,12 +18,12 @@ type SignedDetails struct {
 	Email     string
 	FirstName string
 	LastName  string
-	Role      string
+	Role      models.UserRole
 	UserID    string
 	jwt.RegisteredClaims
 }
 
-func GenerateAllTokens(email, firstName, lastName, role, userId string) (string, string, error) {
+func GenerateAllTokens(email, firstName, lastName, userId string, role models.UserRole) (string, string, error) {
 	claims := &SignedDetails{
 		Email:     email,
 		FirstName: firstName,
@@ -123,12 +124,12 @@ func GetUserIDFromContext(ctx *gin.Context) (string, error) {
 	return id, nil
 }
 
-func GetUserRoleFromContext(ctx *gin.Context) (string, error) {
+func GetUserRoleFromContext(ctx *gin.Context) (models.UserRole, error) {
 	role, exists := ctx.Get("role")
 	if !exists {
 		return "", errors.New("User role does not exist in this context")
 	}
-	userRole, ok := role.(string)
+	userRole, ok := role.(models.UserRole)
 	if !ok {
 		return "", errors.New("Unable to retrieve user role")
 	}

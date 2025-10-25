@@ -116,15 +116,6 @@ func DeleteMovieByIMDBID() gin.HandlerFunc {
 
 func AdminReviewUpdate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		role, err := utils.GetUserRoleFromContext(ctx)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "User role not found in this context"})
-			return
-		}
-		if role != "ADMIN" {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: Not an admin"})
-			return
-		}
 		IMDb_ID := ctx.Param("imdb_id")
 		if IMDb_ID == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Movie IMDb id is required"})

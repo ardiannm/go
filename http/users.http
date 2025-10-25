@@ -9,6 +9,7 @@ Content-Type: application/json
 
 ###
 GET http://localhost:8080/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImFtLmFyZGlhbi5tYWxpcWFqQGdtYWlsLmNvbSIsIkZpcnN0TmFtZSI6IkFyZGlhbiIsIkxhc3ROYW1lIjoiTWFsaXFhaiIsIlJvbGUiOiJBRE1JTiIsIlVzZXJJRCI6IjY4ZmJlN2FhYzYzZjA0NzdhZWQ3NjhmZSIsImlzcyI6IkdvdHJvY2siLCJleHAiOjE3NjE1MDQyNjQsImlhdCI6MTc2MTQxNzg2NH0.nEabgXitJL4CSyfoteFFKwGi5YcuIzkVjiU1Dxw26gE
 
 ###
 POST http://localhost:8080/users

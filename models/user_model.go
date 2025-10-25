@@ -6,6 +6,13 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+type UserRole string
+
+const (
+	USER  UserRole = "USER"
+	ADMIN UserRole = "ADMIN"
+)
+
 type User struct {
 	ID              bson.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	UserID          string        `bson:"user_id" json:"user_id"`
@@ -13,7 +20,7 @@ type User struct {
 	LastName        string        `bson:"last_name" json:"last_name" validate:"required,min=2,max=100"`
 	Email           string        `bson:"email" json:"email" validate:"required,email"`
 	Password        string        `bson:"password" json:"password" validate:"required,min=6"`
-	Role            string        `bson:"role" json:"role" validate:"oneof=ADMIN USER"`
+	Role            UserRole      `bson:"role" json:"role" validate:"oneof=ADMIN USER"`
 	CreatedAt       time.Time     `bson:"created_at" json:"created_at"`
 	UpdatedAt       time.Time     `bson:"updated_at" json:"updated_at"`
 	Token           string        `bson:"token" json:"token"`
@@ -27,12 +34,12 @@ type UserLogin struct {
 }
 
 type UserResponse struct {
-	UserID          string  `json:"user_id"`
-	FirstName       string  `json:"first_name"`
-	LastName        string  `json:"last_name"`
-	Email           string  `json:"email"`
-	Role            string  `json:"role"`
-	Token           string  `json:"token"`
-	RefreshToken    string  `json:"refresh_token"`
-	FavouriteGenres []Genre `json:"favourite_genre"`
+	UserID          string   `json:"user_id"`
+	FirstName       string   `json:"first_name"`
+	LastName        string   `json:"last_name"`
+	Email           string   `json:"email"`
+	Role            UserRole `json:"role"`
+	Token           string   `json:"token"`
+	RefreshToken    string   `json:"refresh_token"`
+	FavouriteGenres []Genre  `json:"favourite_genre"`
 }

@@ -8,6 +8,5 @@ import (
 func SetupUnprotectedRoutes(router *gin.Engine) {
 	router.GET("/movies", controllers.GetMovies())
 	router.POST("/users", controllers.RegisterUser())
-	router.GET("/users", controllers.GetUsers())
 	router.POST("/users/login", controllers.LoginUser())
 }

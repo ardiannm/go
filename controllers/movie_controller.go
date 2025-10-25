@@ -122,7 +122,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 			return
 		}
 		if role != "ADMIN" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Not an admin"})
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: Not an admin"})
 			return
 		}
 		IMDb_ID := ctx.Param("imdb_id")
@@ -182,14 +182,11 @@ func GetReviewRanking(adminReview string) (string, int, error) {
 		}
 	}
 	sentimentDelimited = strings.Trim(sentimentDelimited, ", ")
-	if config.OPEN_AI_API_KEY == "" {
-		return "", 0, errors.New("Could not read OPEN_AI_API_KEY")
-	}
-	llm, err := openai.New(openai.WithToken(config.OPEN_AI_API_KEY))
+	llm, err := openai.New(openai.WithToken(config.Env.OPEN_AI_API_KEY))
 	if err != nil {
 		return "", 0, err
 	}
-	BASE_PROMPT := strings.Replace(config.PROMPT_TEMPLATE, "{rankings}", sentimentDelimited, 1)
+	BASE_PROMPT := strings.Replace(config.Env.PROMPT_TEMPLATE, "{rankings}", sentimentDelimited, 1)
 	response, err := llm.Call(context.Background(), BASE_PROMPT+adminReview)
 	if err != nil {
 		return "", 0, err

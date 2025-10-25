@@ -9,6 +9,7 @@ import (
 func SetupProtectedRoutes(router *gin.Engine) {
 	router.Use(middleware.AuthMiddleware())
 
+	router.GET("/users", controllers.GetUsers())
 	router.GET("/movies/:imdb_id", controllers.GetMovie())
 	router.POST("/movies", controllers.AddMovie())
 	router.DELETE("/movies/:imdb_id", controllers.DeleteMovieByIMDBID())

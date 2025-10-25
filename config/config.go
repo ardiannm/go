@@ -3,60 +3,61 @@ package config
 import (
 	"log"
 	"os"
+	"reflect"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-var (
+// Config holds all environment variables
+type Config struct {
 	MONGODB_URI        string
 	DATABASE_NAME      string
 	OPEN_AI_API_KEY    string
 	PROMPT_TEMPLATE    string
 	SECRET_ACCESS_KEY  string
 	SECRET_REFRESH_KEY string
-)
+}
+
+// Env is the global config instance
+var Env Config
 
 func init() {
-	// Load .env once
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
+	// Load .env (ignore if not found)
+	if err := godotenv.Load(".env"); err != nil {
 		log.Println("⚠️ .env file not found, using system environment")
 	}
 
-	// Read required env vars
+	v := reflect.ValueOf(&Env).Elem()
+	t := v.Type()
 
-	MONGODB_URI = os.Getenv("MONGODB_URI")
-	DATABASE_NAME = os.Getenv("DATABASE_NAME")
-	OPEN_AI_API_KEY = os.Getenv("OPEN_AI_API_KEY")
-	PROMPT_TEMPLATE = os.Getenv("PROMPT_TEMPLATE")
-	SECRET_ACCESS_KEY = os.Getenv("SECRET_ACCESS_KEY")
-	SECRET_REFRESH_KEY = os.Getenv("SECRET_REFRESH_KEY")
+	var missingEnvVariables string
 
-	// Validate critical vars
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		fieldValue := v.Field(i)
 
-	if MONGODB_URI == "" {
-		log.Fatal("❌ Missing MONGODB_URI in environment")
+		envVariableName := field.Name
+		value := os.Getenv(envVariableName)
+
+		if value == "" {
+			missingEnvVariables += "❌ " + envVariableName + "\n"
+		} else {
+			if fieldValue.Kind() == reflect.String {
+				fieldValue.SetString(value)
+			} else if fieldValue.Kind() == reflect.Int64 {
+				parsed, err := strconv.ParseInt(value, 10, 64)
+				if err != nil {
+					log.Fatalf("❌ Invalid value for %s: %s", envVariableName, value)
+				}
+				fieldValue.SetInt(parsed)
+			} else {
+				log.Fatalf("Unsupported field type for %s", field.Name)
+			}
+		}
 	}
 
-	if DATABASE_NAME == "" {
-		log.Fatal("❌ Missing DATABASE_NAME in environment")
-	}
-
-	if OPEN_AI_API_KEY == "" {
-		log.Fatal("❌ Missing OPEN_AI_API_KEY in environment")
-	}
-
-	if SECRET_ACCESS_KEY == "" {
-		log.Fatal("❌ Missing SECRET_ACCESS_KEY in environment")
-	}
-
-	if SECRET_ACCESS_KEY == "" {
-		log.Fatal("❌ Missing SECRET_ACCESS_KEY in environment")
-	}
-
-	if PROMPT_TEMPLATE == "" {
-		log.Fatal("❌ Missing PROMPT_TEMPLATE in environment")
+	if missingEnvVariables != "" {
+		log.Fatalf("Missing required environment variables:\n%s", missingEnvVariables)
 	}
 }

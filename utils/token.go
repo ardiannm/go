@@ -3,9 +3,9 @@ package utils
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
+	"github.com/ardiannm/go/config"
 	"github.com/ardiannm/go/database"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -22,9 +22,6 @@ type SignedDetails struct {
 	jwt.RegisteredClaims
 }
 
-var SECRET_KEY = os.Getenv("SECRET_ACCESS_KEY")
-var SECRET_REFRESH_KEY = os.Getenv("SECRET_REFRESH_KEY")
-
 func GenerateAllTokens(email, firstName, lastName, role, userId string) (string, string, error) {
 	claims := &SignedDetails{
 		Email:     email,
@@ -39,7 +36,7 @@ func GenerateAllTokens(email, firstName, lastName, role, userId string) (string,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(SECRET_KEY))
+	signedToken, err := token.SignedString([]byte(config.SECRET_ACCESS_KEY))
 	if err != nil {
 		return "", "", err
 	}
@@ -56,7 +53,7 @@ func GenerateAllTokens(email, firstName, lastName, role, userId string) (string,
 		},
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	signedRefreshToken, err := refreshToken.SignedString([]byte(SECRET_REFRESH_KEY))
+	signedRefreshToken, err := refreshToken.SignedString([]byte(config.SECRET_REFRESH_KEY))
 	if err != nil {
 		return "", "", err
 	}
@@ -100,7 +97,7 @@ func GetAccessToken(ctx *gin.Context) (string, error) {
 func ValidateToken(tokenString string) (*SignedDetails, error) {
 	claims := &SignedDetails{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
-		return []byte(SECRET_KEY), nil
+		return []byte(config.SECRET_ACCESS_KEY), nil
 	})
 	if err != nil {
 		return nil, err

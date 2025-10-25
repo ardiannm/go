@@ -3,19 +3,16 @@ package controllers
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/ardiannm/go/config"
 	"github.com/ardiannm/go/database"
 	"github.com/ardiannm/go/models"
 	"github.com/ardiannm/go/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms/openai"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -48,7 +45,7 @@ func GetMovies() gin.HandlerFunc {
 
 func GetMovie() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		movieID := ctx.Param("imdb_id")
 		if movieID == "" {
@@ -56,7 +53,7 @@ func GetMovie() gin.HandlerFunc {
 			return
 		}
 		var movie models.Movie
-		err := movieCollection.FindOne(ctx, bson.M{"imdb_id": movieID}).Decode(&movie)
+		err := movieCollection.FindOne(mongoCtx, bson.M{"imdb_id": movieID}).Decode(&movie)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
 			return
@@ -89,14 +86,14 @@ func AddMovie() gin.HandlerFunc {
 
 func DeleteMovieByIMDBID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		movieID := ctx.Param("imdb_id")
 		if movieID == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Movie ID required"})
 			return
 		}
-		result, err := movieCollection.DeleteOne(ctx, bson.M{"imdb_id": movieID})
+		result, err := movieCollection.DeleteOne(mongoCtx, bson.M{"imdb_id": movieID})
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -144,7 +141,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
-		sentinment, rankingValue, err := GetReviewRanking(req.AdminReview)
+		sentiment, rankingValue, err := GetReviewRanking(req.AdminReview)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't get review ranking", "reasons": err.Error()})
 			return
@@ -155,7 +152,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 		update := bson.M{
 			"$set": models.Ranking{
 				RankingValue: rankingValue,
-				RankingName:  sentinment,
+				RankingName:  sentiment,
 			},
 		}
 		result, err := movieCollection.UpdateOne(mongoCtx, filter, update)
@@ -167,7 +164,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
 			return
 		}
-		res.RankingName = sentinment
+		res.RankingName = sentiment
 		res.AdminReview = req.AdminReview
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -185,21 +182,14 @@ func GetReviewRanking(adminReview string) (string, int, error) {
 		}
 	}
 	sentimentDelimited = strings.Trim(sentimentDelimited, ", ")
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Println("Warning: .env file not found")
-
-	}
-	OPEN_AI_API_KEY := os.Getenv("OPEN_AI_API_KEY")
-	if OPEN_AI_API_KEY == "" {
+	if config.OPEN_AI_API_KEY == "" {
 		return "", 0, errors.New("Could not read OPEN_AI_API_KEY")
 	}
-	llm, err := openai.New(openai.WithToken(OPEN_AI_API_KEY))
+	llm, err := openai.New(openai.WithToken(config.OPEN_AI_API_KEY))
 	if err != nil {
 		return "", 0, err
 	}
-	PROMPT_TEMPLATE := os.Getenv("PROMPT_TEMPLATE")
-	BASE_PROMPT := strings.Replace(PROMPT_TEMPLATE, "{rankings}", sentimentDelimited, 1)
+	BASE_PROMPT := strings.Replace(config.PROMPT_TEMPLATE, "{rankings}", sentimentDelimited, 1)
 	response, err := llm.Call(context.Background(), BASE_PROMPT+adminReview)
 	if err != nil {
 		return "", 0, err
@@ -215,15 +205,15 @@ func GetReviewRanking(adminReview string) (string, int, error) {
 }
 
 func GetRankings() ([]models.Ranking, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	var mongoCtx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
-	cursor, err := rankingCollection.Find(ctx, bson.M{})
+	cursor, err := rankingCollection.Find(mongoCtx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(mongoCtx)
 	var rankings []models.Ranking
-	if err := cursor.All(ctx, &rankings); err != nil {
+	if err := cursor.All(mongoCtx, &rankings); err != nil {
 		return nil, err
 	}
 	return rankings, nil
@@ -241,17 +231,9 @@ func GetRecommendedMovies() gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		err = godotenv.Load(".env")
-		if err != nil {
-			log.Println("Warining: .env file not found")
-		}
-		var limit int64 = 5
-		if RECOMMENDED_MOVIE_LIMIT := os.Getenv("RECOMMENDED_MOVIE_LIMIT"); RECOMMENDED_MOVIE_LIMIT != "" {
-			limit, _ = strconv.ParseInt(RECOMMENDED_MOVIE_LIMIT, 10, 64)
-		}
 		findOptions := options.Find()
 		findOptions.SetSort(bson.D{{Key: "ranking.ranking_value", Value: 1}})
-		findOptions.SetLimit(limit)
+		findOptions.SetLimit(5)
 		filter := bson.M{"genre.genre_name": bson.M{"$in": favouriteGenres}}
 		mongoCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()

@@ -34,7 +34,7 @@ func RegisterUser() gin.HandlerFunc {
 		}
 		validate := validator.New()
 		if err := validate.Struct(user); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "reasons": err.Error()})
 			return
 		}
 		var mongoCtx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -77,7 +77,7 @@ func GetUsers() gin.HandlerFunc {
 		}
 		defer cursor.Close(mongoCtx)
 		if err = cursor.All(mongoCtx, &users); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode users", "details": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode users", "reasons": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, users)
@@ -106,12 +106,12 @@ func LoginUser() gin.HandlerFunc {
 		}
 		token, refreshToken, err := utils.GenerateAllTokens(foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.Role, foundUser.UserID)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens", "details": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens", "reasons": err.Error()})
 			return
 		}
 		err = utils.UpdateAllTokens(foundUser.UserID, token, refreshToken)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens", "details": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens", "reasons": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, models.UserResponse{
